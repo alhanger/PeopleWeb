@@ -5,7 +5,7 @@
 {{id}}. {{firstName}} {{lastName}} <a href="person?id={{id}}">More Info</a><br>
 {{/list}}
 
-<a href="/?counter={{prevCounter}}">Prev</a>
-<a href="/?counter={{counter}}">Next</a>
+{{#showPrev}}<a href="/?counter={{prevCounter}}">Prev</a>{{/showPrev}}
+{{#showNext}}<a href="/?counter={{counter}}">Next</a>{{/showNext}}
 </body>
 </html>

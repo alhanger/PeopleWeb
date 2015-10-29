@@ -11,6 +11,8 @@ import java.util.HashMap;
  * Created by zach on 10/19/15.
  */
 public class People {
+    static final int SHOW_COUNT = 20;
+
     public static void main(String[] args) {
         ArrayList<Person> people = new ArrayList();
 
@@ -30,24 +32,32 @@ public class People {
                 "/",
                 ((request, response) -> {
                     String counter = request.queryParams("counter");
-                    int countNum = 0;
+                    int countNum;
 
                     if (counter == null) {
                         countNum = 0;
                     }
-                    else if (counter != null) {
+                    else {
                         countNum = Integer.valueOf(counter);
                     }
                     if (countNum >= people.size() || countNum < 0) {
                         Spark.halt(403);
                     }
 
-                    ArrayList<Person> list = new ArrayList<Person>(people.subList(countNum, countNum + 20));
+                    ArrayList<Person> list = new ArrayList<Person>(people.subList(
+                            Math.max(0, Math.min(people.size(), countNum)),
+                            Math.max(0, Math.min(people.size(), countNum + SHOW_COUNT))
+                    ));
 
                     HashMap m = new HashMap();
                     m.put("list", list);
-                    m.put("prevCounter", countNum - 20);
-                    m.put("counter", countNum + 20);
+                    m.put("prevCounter", countNum - SHOW_COUNT);
+                    m.put("counter", countNum + SHOW_COUNT);
+
+                    boolean showNext = countNum + SHOW_COUNT < people.size();
+                    boolean showPrev = countNum > 0;
+                    m.put("showNext", showNext);
+                    m.put("showPrev", showPrev);
 
                     return new ModelAndView(m, "people.html");
                 }),
