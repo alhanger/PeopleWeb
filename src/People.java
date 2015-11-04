@@ -47,23 +47,59 @@ public class People {
         return person;
     }
 
-    public static void main(String[] args) throws SQLException {
-        Connection conn = DriverManager.getConnection("jdbc:h2:./main");
-        createTables(conn);
-
-        ArrayList<Person> people = new ArrayList();
-
-        String fileContent = readFile("people.csv");
+    public static void populateDatabase(Connection conn, String fileName) throws SQLException {
+        String fileContent = readFile(fileName);
         String[] lines = fileContent.split("\n");
-
         for (String line : lines) {
             if (line == lines[0])
                 continue;
 
             String[] columns = line.split(",");
-            Person person = new Person(Integer.valueOf(columns[0]), columns[1], columns[2], columns[3], columns[4], columns[5]);
+            String firstName = columns[0];
+            String lastName = columns[1];
+            String email = columns[2];
+            String country = columns[3];
+            String ip = columns[4];
+
+            insertPerson(conn, firstName, lastName, email, country, ip);
+        }
+    }
+
+    public static ArrayList<Person> selectPeople(Connection conn) throws SQLException{
+        ArrayList<Person> people = new ArrayList<>();
+        PreparedStatement stmt = conn.prepareStatement("SELECT * FROM people");
+        ResultSet results = stmt.executeQuery();
+        while (results.next()) {
+            Person person = new Person();
+            person.firstName = results.getString("first_name");
+            person.lastName = results.getString("last_name");
+            person.email = results.getString("email");
+            person.country = results.getString("country");
+            person.ip = results.getString("ip");
             people.add(person);
         }
+        return people;
+    }
+
+    public static void main(String[] args) throws SQLException {
+        Connection conn = DriverManager.getConnection("jdbc:h2:./main");
+        createTables(conn);
+
+        populateDatabase(conn, "people.csv");
+
+        ArrayList<Person> people = new ArrayList();
+
+//        String fileContent = readFile("people.csv");
+//        String[] lines = fileContent.split("\n");
+//
+//        for (String line : lines) {
+//            if (line == lines[0])
+//                continue;
+//
+//            String[] columns = line.split(",");
+//            Person person = new Person(Integer.valueOf(columns[0]), columns[1], columns[2], columns[3], columns[4], columns[5]);
+//            people.add(person);
+//        }
 
         Spark.get(
                 "/",

@@ -4,6 +4,7 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.ArrayList;
 
 import static org.junit.Assert.*;
 
@@ -32,5 +33,17 @@ public class PeopleTest {
         endConnection(conn);
 
         assertTrue(person != null);
+    }
+
+    @Test
+    public void testSelectPeople() throws SQLException {
+        Connection conn = startConnection();
+        People.insertPerson(conn, "Alex", "Hanger", "alex@theironyard.com", "USA", "1.2.3.4.5");
+        People.insertPerson(conn, "Anna", "Williams", "anna@theironyard.com", "USA", "1.2.3.4.5");
+        People.insertPerson(conn, "Edward", "Hanger", "edward@theironyard.com", "USA", "1.2.3.4.5");
+        ArrayList<Person> people = People.selectPeople(conn);
+        endConnection(conn);
+
+        assertTrue(people.size() == 3);
     }
 }
