@@ -2,10 +2,10 @@
 <body>
 <h1>People</h1>
 {{#list}}
-{{id}}. {{firstName}} {{lastName}} <a href="person?id={{id}}">More Info</a><br>
+{{firstName}} {{lastName}} <a href="person?id={{id}}">More Info</a><br>
 {{/list}}
 
-{{#showPrev}}<a href="/?counter={{prevCounter}}">Prev</a>{{/showPrev}}
-{{#showNext}}<a href="/?counter={{counter}}">Next</a>{{/showNext}}
+<a href="/?offset={{prevCounter}}">Prev</a>
+<a href="/?offset={{counter}}">Next</a>
 </body>
 </html>

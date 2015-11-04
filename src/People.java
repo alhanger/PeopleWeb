@@ -38,6 +38,7 @@ public class People {
         ResultSet results = stmt.executeQuery();
         if (results.next()) {
             person = new Person();
+            person.id = results.getInt("id");
             person.firstName = results.getString("first_name");
             person.lastName = results.getString("last_name");
             person.email = results.getString("email");
@@ -55,22 +56,24 @@ public class People {
                 continue;
 
             String[] columns = line.split(",");
-            String firstName = columns[0];
-            String lastName = columns[1];
-            String email = columns[2];
-            String country = columns[3];
-            String ip = columns[4];
+            String firstName = columns[1];
+            String lastName = columns[2];
+            String email = columns[3];
+            String country = columns[4];
+            String ip = columns[5];
 
             insertPerson(conn, firstName, lastName, email, country, ip);
         }
     }
 
-    public static ArrayList<Person> selectPeople(Connection conn) throws SQLException{
+    public static ArrayList<Person> selectPeople(Connection conn, int offset) throws SQLException{
         ArrayList<Person> people = new ArrayList<>();
-        PreparedStatement stmt = conn.prepareStatement("SELECT * FROM people");
+        PreparedStatement stmt = conn.prepareStatement("SELECT * FROM people LIMIT 20 OFFSET ?");
+        stmt.setInt(1, offset);
         ResultSet results = stmt.executeQuery();
         while (results.next()) {
             Person person = new Person();
+            person.id = results.getInt("id");
             person.firstName = results.getString("first_name");
             person.lastName = results.getString("last_name");
             person.email = results.getString("email");
@@ -84,53 +87,26 @@ public class People {
     public static void main(String[] args) throws SQLException {
         Connection conn = DriverManager.getConnection("jdbc:h2:./main");
         createTables(conn);
-
         populateDatabase(conn, "people.csv");
-
-        ArrayList<Person> people = new ArrayList();
-
-//        String fileContent = readFile("people.csv");
-//        String[] lines = fileContent.split("\n");
-//
-//        for (String line : lines) {
-//            if (line == lines[0])
-//                continue;
-//
-//            String[] columns = line.split(",");
-//            Person person = new Person(Integer.valueOf(columns[0]), columns[1], columns[2], columns[3], columns[4], columns[5]);
-//            people.add(person);
-//        }
 
         Spark.get(
                 "/",
                 ((request, response) -> {
-                    String counter = request.queryParams("counter");
-                    int countNum;
+                    String offset = request.queryParams("offset");
+                    int offsetNum = 0;
 
-                    if (counter == null) {
-                        countNum = 0;
-                    }
-                    else {
-                        countNum = Integer.valueOf(counter);
-                    }
-                    if (countNum >= people.size() || countNum < 0) {
-                        Spark.halt(403);
+                    try{
+                        offsetNum = Integer.valueOf(offset);
+                    } catch (Exception e) {
+
                     }
 
-                    ArrayList<Person> list = new ArrayList<Person>(people.subList(
-                            Math.max(0, Math.min(people.size(), countNum)),
-                            Math.max(0, Math.min(people.size(), countNum + SHOW_COUNT))
-                    ));
+                    ArrayList<Person> list = selectPeople(conn, offsetNum);
 
                     HashMap m = new HashMap();
                     m.put("list", list);
-                    m.put("prevCounter", countNum - SHOW_COUNT);
-                    m.put("counter", countNum + SHOW_COUNT);
-
-                    boolean showNext = countNum + SHOW_COUNT < people.size();
-                    boolean showPrev = countNum > 0;
-                    m.put("showNext", showNext);
-                    m.put("showPrev", showPrev);
+                    m.put("prevCounter", offsetNum - SHOW_COUNT);
+                    m.put("counter", offsetNum + SHOW_COUNT);
 
                     return new ModelAndView(m, "people.html");
                 }),
@@ -144,7 +120,7 @@ public class People {
 
                     try{
                         int idNum = Integer.valueOf(id);
-                        Person person = people.get(idNum - 1);
+                        Person person = selectPerson(conn, idNum);
                         p.put("person", person);
                     } catch (Exception e) {
 
