@@ -4,6 +4,7 @@ import spark.template.mustache.MustacheTemplateEngine;
 
 import java.io.File;
 import java.io.FileReader;
+import java.sql.*;
 import java.util.ArrayList;
 import java.util.HashMap;
 
@@ -13,7 +14,43 @@ import java.util.HashMap;
 public class People {
     static final int SHOW_COUNT = 20;
 
-    public static void main(String[] args) {
+    public static void createTables(Connection conn) throws SQLException {
+        Statement stmt = conn.createStatement();
+        stmt.execute("DROP TABLE IF EXISTS people");
+        stmt.execute("CREATE TABLE people " +
+                "(id IDENTITY, first_name VARCHAR, last_name VARCHAR, email VARCHAR, country VARCHAR, ip VARCHAR)");
+    }
+
+    public static void insertPerson(Connection conn, String firstName, String lastName, String email, String country, String ip) throws SQLException {
+        PreparedStatement stmt = conn.prepareStatement("INSERT INTO people VALUES (NULL, ?, ?, ?, ?, ?)");
+        stmt.setString(1, firstName);
+        stmt.setString(2, lastName);
+        stmt.setString(3, email);
+        stmt.setString(4, country);
+        stmt.setString(5, ip);
+        stmt.execute();
+    }
+
+    public static Person selectPerson(Connection conn, int id) throws SQLException {
+        Person person = null;
+        PreparedStatement stmt = conn.prepareStatement("SELECT * FROM people WHERE id = ?");
+        stmt.setInt(1, id);
+        ResultSet results = stmt.executeQuery();
+        if (results.next()) {
+            person = new Person();
+            person.firstName = results.getString("first_name");
+            person.lastName = results.getString("last_name");
+            person.email = results.getString("email");
+            person.country = results.getString("country");
+            person.ip = results.getString("ip");
+        }
+        return person;
+    }
+
+    public static void main(String[] args) throws SQLException {
+        Connection conn = DriverManager.getConnection("jdbc:h2:./main");
+        createTables(conn);
+
         ArrayList<Person> people = new ArrayList();
 
         String fileContent = readFile("people.csv");
